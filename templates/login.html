@@ -1,1 +1,21 @@
-
+<!doctype html>
+<html>
+<head>
+  <title>KeyGen Login</title>
+  <style>
+    body { background:#0f0b1a; color:#fff; font-family:sans-serif; height:100vh; display:flex; align-items:center; justify-content:center; }
+    form { background:rgba(255,255,255,0.02); padding:20px 30px; border-radius:12px; width:280px; }
+    input { width:100%; margin-bottom:10px; padding:8px; border:none; border-radius:6px; }
+    button { width:100%; padding:8px; background:#ff4aa3; border:none; border-radius:6px; color:#fff; font-weight:bold; }
+  </style>
+</head>
+<body>
+  <form method="post">
+    <h3>KeyGen Panel Login</h3>
+    {% if error %}<p style="color:#ff8080">{{error}}</p>{% endif %}
+    <input name="username" placeholder="Username">
+    <input name="password" type="password" placeholder="Password">
+    <button>Login</button>
+  </form>
+</body>
+</html>
