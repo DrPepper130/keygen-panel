@@ -1,1 +1,43 @@
+<!doctype html>
+<html>
+<head>
+  <title>KeyGen Panel</title>
+  <style>
+    body { background:#0f0b1a; color:#fff; font-family:sans-serif; padding:20px 40px; }
+    table { width:100%; border-collapse:collapse; margin-top:20px; }
+    th, td { padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.05); }
+    .status-unused { color:#3ddc97; }
+    .status-used { color:#ffe66d; }
+    .status-revoked { color:#ff6b6b; }
+  </style>
+</head>
+<body>
+  <h2>KeyGen Panel</h2>
+  <a href="/logout" style="color:#fff;">Logout</a>
 
+  <form method="post" action="/generate" style="margin-top:20px;">
+    <label>Expires in seconds:</label>
+    <input name="valid_for" value="3600">
+    <button type="submit">Generate Key</button>
+  </form>
+
+  <table>
+    <tr>
+      <th>Key</th>
+      <th>Status</th>
+      <th>Created</th>
+      <th>Expires</th>
+      <th>Redeemed By</th>
+    </tr>
+    {% for k in keys %}
+    <tr>
+      <td>{{ k.key }}</td>
+      <td class="status-{{ k.status }}">{{ k.status }}</td>
+      <td>{{ k.created_at }}</td>
+      <td>{{ k.expires_at }}</td>
+      <td>{{ k.redeemed_by_discord_id }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</body>
+</html>
