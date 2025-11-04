@@ -133,10 +133,11 @@ async def postkeymsg(ctx: commands.Context):
             "> Press **Redeem Key** and enter the key.\n"
             "> Done, enjoy your access for **1 hour!**"
         ),
-        color=discord.Color.from_rgb(219, 41, 41)  # red accent like NSFW tag
+        color=discord.Color.from_rgb(219, 41, 41)
     )
 
-    embed.set_thumbnail(url="https://i.imgur.com/hUPESu6.png")
+    # big image inside the embed
+    embed.set_image(url="https://i.imgur.com/hUPESu6.png")
     embed.set_footer(text="Powered by KeyGen")
 
     await ctx.send(embed=embed, view=KeyView())
