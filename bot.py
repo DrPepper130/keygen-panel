@@ -18,8 +18,8 @@ GENERATE_KEY_URL = os.getenv("GENERATE_KEY_URL", "https://your-lockr-page.com")
 # DISCORD SETUP
 # =========================
 intents = discord.Intents.default()
-intents.members = True  # we need to add/remove roles
-
+intents.members = True                  # give/remove roles
+intents.message_content = True          # needed for !postkeymsg
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 
@@ -36,12 +36,12 @@ class RedeemKeyModal(discord.ui.Modal, title="Redeem your key"):
 
     def __init__(self, member: discord.Member):
         super().__init__()
-        self.member = member  # who opened the modal
+        self.member = member  # the user who opened the modal
 
     async def on_submit(self, interaction: discord.Interaction):
         key = str(self.key_input.value).strip()
 
-        # call your Flask panel to redeem the key
+        # call panel API to redeem
         try:
             resp = requests.post(
                 f"{PANEL_API}/api/redeem",
@@ -72,13 +72,12 @@ class RedeemKeyModal(discord.ui.Modal, title="Redeem your key"):
             "✅ VIP role granted for 1 hour.", ephemeral=True
         )
 
-        # schedule role removal after 1 hour
+        # schedule removal after 1 hour
         async def remove_later():
             await asyncio.sleep(3600)
             try:
                 await member.remove_roles(role, reason="VIP expired")
             except Exception:
-                # user left server or role moved — ignore
                 pass
 
         bot.loop.create_task(remove_later())
@@ -89,16 +88,14 @@ class RedeemKeyModal(discord.ui.Modal, title="Redeem your key"):
 # =========================
 class KeyView(discord.ui.View):
     def __init__(self):
-        # persistent view so buttons keep working after restart
-        super().__init__(timeout=None)
+        super().__init__(timeout=None)  # persistent view
 
     @discord.ui.button(
         label="Generate Key",
         style=discord.ButtonStyle.blurple,
-        custom_id="keygen_generate"  # required for persistent views
+        custom_id="keygen_generate"  # must have custom_id for persistent views
     )
     async def generate_key(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # send the user to your ad / lockr page
         await interaction.response.send_message(
             f"Go here to generate your key:\n{GENERATE_KEY_URL}",
             ephemeral=True
@@ -107,7 +104,7 @@ class KeyView(discord.ui.View):
     @discord.ui.button(
         label="Redeem Key",
         style=discord.ButtonStyle.success,
-        custom_id="keygen_redeem"  # required for persistent views
+        custom_id="keygen_redeem"  # must have custom_id for persistent views
     )
     async def redeem_key(self, interaction: discord.Interaction, button: discord.ui.Button):
         modal = RedeemKeyModal(interaction.user)
@@ -120,7 +117,7 @@ class KeyView(discord.ui.View):
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user} ({bot.user.id})")
-    # register the persistent view
+    # register persistent view so buttons keep working after restart
     bot.add_view(KeyView())
 
 
@@ -140,14 +137,24 @@ async def postkeymsg(ctx: commands.Context):
         ),
         color=discord.Color.purple(),
     )
-    # put your real image URL here
+    # replace with a real image URL if you have one
     embed.set_image(url="https://your-cdn-or-image-url.com/vip.png")
     embed.set_footer(text="KeyGen – your gateway to exclusive access")
 
     await ctx.send(embed=embed, view=KeyView())
 
 
+# log command errors to Render logs so we can see them
+@bot.event
+async def on_command_error(ctx: commands.Context, error):
+    print(f"Command error: {error}")
+    try:
+        await ctx.send("There was an error running that command.", delete_after=10)
+    except Exception:
+        pass
+
+
 # =========================
-# RUN BOT
+# RUN
 # =========================
 bot.run(TOKEN)
