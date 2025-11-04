@@ -124,24 +124,23 @@ async def on_ready():
 @bot.command(name="postkeymsg")
 @commands.has_permissions(administrator=True)
 async def postkeymsg(ctx: commands.Context):
-    """Post the embed with the buttons."""
     embed = discord.Embed(
-        title="/vita 🍑 18+ Key System",
+        title="🔞 Get Your FREE NSFW Content!",
         description=(
-            "**Here is a tutorial for access**\n"
-            "1. Click the **Generate Key** button.\n"
-            "2. Wait to be redirected to the ad page.\n"
-            "3. Watch the ads & copy your key.\n"
-            "4. Press **Redeem Key** and complete the steps.\n"
-            "**Done!** Enjoy your access for **1 hour**! 🔐"
+            "**Follow the simple steps below to unlock your NSFW content!**\n\n"
+            "> Click on the **Generate Key** button.\n"
+            "> Watch the ads & copy the generated key.\n"
+            "> Press **Redeem Key** and enter the key.\n"
+            "> Done, enjoy your access for **1 hour!**"
         ),
-        color=discord.Color.purple(),
+        color=discord.Color.from_rgb(219, 41, 41)  # red accent like NSFW tag
     )
-    # replace with a real image URL if you have one
-    embed.set_image(url="https://your-cdn-or-image-url.com/vip.png")
-    embed.set_footer(text="KeyGen – your gateway to exclusive access")
+
+    embed.set_thumbnail(url="https://i.imgur.com/hUPESu6.png")
+    embed.set_footer(text="Powered by KeyGen")
 
     await ctx.send(embed=embed, view=KeyView())
+
 
 
 # log command errors to Render logs so we can see them
