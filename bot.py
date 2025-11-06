@@ -7,10 +7,10 @@ from discord.ext import commands
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 GUILD_ID = int(os.getenv("GUILD_ID"))
 ROLE_ID = int(os.getenv("ROLE_ID"))
-PANEL_API = os.getenv("PANEL_API")  # e.g. https://keygen-panel.onrender.com
-API_SECRET = os.getenv("API_SECRET")  # must match Flask
+PANEL_API = os.getenv("PANEL_API")
+API_SECRET = os.getenv("API_SECRET")
 
-# Lockr ad link (where users generate their keys)
+# Lockr ad link
 GENERATE_KEY_URL = "https://lockr.so/qTLYPVdiz"
 
 intents = discord.Intents.default()
@@ -36,7 +36,6 @@ class RedeemKeyModal(discord.ui.Modal, title="Redeem your key"):
     async def on_submit(self, interaction: discord.Interaction):
         key = str(self.key_input.value).strip()
 
-        # call panel API
         try:
             resp = requests.post(
                 f"{PANEL_API}/api/redeem",
@@ -57,7 +56,6 @@ class RedeemKeyModal(discord.ui.Modal, title="Redeem your key"):
             )
             return
 
-        # give role
         guild = bot.get_guild(GUILD_ID)
         member = guild.get_member(self.member.id) or await guild.fetch_member(self.member.id)
         role = guild.get_role(ROLE_ID)
@@ -67,7 +65,6 @@ class RedeemKeyModal(discord.ui.Modal, title="Redeem your key"):
             "✅ VIP role granted for 1 hour.", ephemeral=True
         )
 
-        # schedule removal
         async def remove_later():
             await asyncio.sleep(3600)
             try:
@@ -83,15 +80,19 @@ class KeyView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-        # direct link button to ad/key page
-        self.add_item(
-            discord.ui.Button(
-                label="Access VIP Content",
-                style=discord.ButtonStyle.link,
-                url=GENERATE_KEY_URL,
-            )
+    # Blue "Access VIP Content" button
+    @discord.ui.button(
+        label="Access VIP Content",
+        style=discord.ButtonStyle.primary,
+        custom_id="keygen_access"
+    )
+    async def access_vip(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message(
+            f"🔗 Click below to generate your key:\n{GENERATE_KEY_URL}",
+            ephemeral=True
         )
 
+    # Green "Redeem Key" button
     @discord.ui.button(
         label="Redeem Key",
         style=discord.ButtonStyle.success,
@@ -102,11 +103,11 @@ class KeyView(discord.ui.View):
         await interaction.response.send_modal(modal)
 
 
-# ---- Bot Ready Event ----
+# ---- Bot Ready ----
 @bot.event
 async def on_ready():
     print(f"✅ Logged in as {bot.user} ({bot.user.id})")
-    bot.add_view(KeyView())  # persistent buttons
+    bot.add_view(KeyView())
     print("Persistent view loaded and ready.")
 
 
@@ -125,7 +126,7 @@ async def postkeymsg(ctx: commands.Context):
         ),
         color=discord.Color.purple(),
     )
-    embed.set_image(url="https://i.imgur.com/hUPESu6.png")
+    embed.set_image(url="https://i.imgur.com/OUH4pIk.gif")
     embed.set_footer(text="Powered by KeyGen")
 
     await ctx.send(embed=embed, view=KeyView())
