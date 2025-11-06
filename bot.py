@@ -4,28 +4,23 @@ import requests
 import discord
 from discord.ext import commands
 
-# =========================
-# ENV VARIABLES
-# =========================
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 GUILD_ID = int(os.getenv("GUILD_ID"))
 ROLE_ID = int(os.getenv("ROLE_ID"))
 PANEL_API = os.getenv("PANEL_API")  # e.g. https://keygen-panel.onrender.com
-API_SECRET = os.getenv("API_SECRET")  # must match Flask's API_SECRET
-GENERATE_KEY_URL = os.getenv("GENERATE_KEY_URL", "https://your-lockr-page.com")
+API_SECRET = os.getenv("API_SECRET")  # must match Flask
 
-# =========================
-# DISCORD SETUP
-# =========================
+# Lockr ad link (where users generate their keys)
+GENERATE_KEY_URL = "https://lockr.so/qTLYPVdiz"
+
 intents = discord.Intents.default()
-intents.members = True                  # give/remove roles
-intents.message_content = True          # needed for !postkeymsg
+intents.members = True
+intents.message_content = True
+
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 
-# =========================
-# MODAL (user pastes key)
-# =========================
+# ---- Modal for key input ----
 class RedeemKeyModal(discord.ui.Modal, title="Redeem your key"):
     key_input = discord.ui.TextInput(
         label="Paste your key",
@@ -36,12 +31,12 @@ class RedeemKeyModal(discord.ui.Modal, title="Redeem your key"):
 
     def __init__(self, member: discord.Member):
         super().__init__()
-        self.member = member  # the user who opened the modal
+        self.member = member
 
     async def on_submit(self, interaction: discord.Interaction):
         key = str(self.key_input.value).strip()
 
-        # call panel API to redeem
+        # call panel API
         try:
             resp = requests.post(
                 f"{PANEL_API}/api/redeem",
@@ -72,7 +67,7 @@ class RedeemKeyModal(discord.ui.Modal, title="Redeem your key"):
             "✅ VIP role granted for 1 hour.", ephemeral=True
         )
 
-        # schedule removal after 1 hour
+        # schedule removal
         async def remove_later():
             await asyncio.sleep(3600)
             try:
@@ -83,44 +78,39 @@ class RedeemKeyModal(discord.ui.Modal, title="Redeem your key"):
         bot.loop.create_task(remove_later())
 
 
-# =========================
-# VIEW WITH BUTTONS
-# =========================
+# ---- View with buttons ----
 class KeyView(discord.ui.View):
     def __init__(self):
-        super().__init__(timeout=None)  # persistent view
+        super().__init__(timeout=None)
 
-    @discord.ui.button(
-        label="Generate Key",
-        style=discord.ButtonStyle.blurple,
-        custom_id="keygen_generate"  # must have custom_id for persistent views
-    )
-    async def generate_key(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message(
-            f"Go here to generate your key:\n{GENERATE_KEY_URL}",
-            ephemeral=True
+        # direct link button to ad/key page
+        self.add_item(
+            discord.ui.Button(
+                label="Access VIP Content",
+                style=discord.ButtonStyle.link,
+                url=GENERATE_KEY_URL,
+            )
         )
 
     @discord.ui.button(
         label="Redeem Key",
         style=discord.ButtonStyle.success,
-        custom_id="keygen_redeem"  # must have custom_id for persistent views
+        custom_id="keygen_redeem"
     )
     async def redeem_key(self, interaction: discord.Interaction, button: discord.ui.Button):
         modal = RedeemKeyModal(interaction.user)
         await interaction.response.send_modal(modal)
 
 
-# =========================
-# EVENTS / COMMANDS
-# =========================
+# ---- Bot Ready Event ----
 @bot.event
 async def on_ready():
-    print(f"Logged in as {bot.user} ({bot.user.id})")
-    # register persistent view so buttons keep working after restart
-    bot.add_view(KeyView())
+    print(f"✅ Logged in as {bot.user} ({bot.user.id})")
+    bot.add_view(KeyView())  # persistent buttons
+    print("Persistent view loaded and ready.")
 
 
+# ---- Post Embed Command ----
 @bot.command(name="postkeymsg")
 @commands.has_permissions(administrator=True)
 async def postkeymsg(ctx: commands.Context):
@@ -128,33 +118,17 @@ async def postkeymsg(ctx: commands.Context):
         title="🔞 Get Your FREE NSFW Content!",
         description=(
             "**Follow the simple steps below to unlock your NSFW content!**\n\n"
-            "> Click on the **Generate Key** button.\n"
+            "> Click on the **Access VIP Content** button.\n"
             "> Watch the ads & copy the generated key.\n"
             "> Press **Redeem Key** and enter the key.\n"
-            "> Done, enjoy your access for **1 hour!**"
+            "> Done — enjoy your access for **1 hour!**"
         ),
-        color=discord.Color.from_rgb(219, 41, 41)
+        color=discord.Color.purple(),
     )
-
-    # big image inside the embed
     embed.set_image(url="https://i.imgur.com/hUPESu6.png")
     embed.set_footer(text="Powered by KeyGen")
 
     await ctx.send(embed=embed, view=KeyView())
 
 
-
-# log command errors to Render logs so we can see them
-@bot.event
-async def on_command_error(ctx: commands.Context, error):
-    print(f"Command error: {error}")
-    try:
-        await ctx.send("There was an error running that command.", delete_after=10)
-    except Exception:
-        pass
-
-
-# =========================
-# RUN
-# =========================
 bot.run(TOKEN)
