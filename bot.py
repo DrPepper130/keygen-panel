@@ -13,6 +13,9 @@ API_SECRET = os.getenv("API_SECRET")
 # Lockr ad link
 GENERATE_KEY_URL = "https://lockr.so/qTLYPVdiz"
 
+# your Discord user ID for testing DMs
+TEST_USER_ID = 1434249225432072344  # Lucas
+
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
@@ -130,6 +133,21 @@ async def postkeymsg(ctx: commands.Context):
     embed.set_footer(text="Powered by KeyGen")
 
     await ctx.send(embed=embed, view=KeyView())
+
+
+# ---- NEW: test DM on your account only ----
+@bot.command(name="dmme")
+@commands.has_permissions(administrator=True)
+async def dmme(ctx: commands.Context, *, message: str):
+    """Send a private DM to your test user ID only."""
+    try:
+        user = await bot.fetch_user(TEST_USER_ID)
+        await user.send(message)
+        await ctx.send("✅ Sent DM to test user.")
+    except discord.Forbidden:
+        await ctx.send("❌ Can't DM that user (DMs closed or blocked).")
+    except Exception as e:
+        await ctx.send(f"❌ Error sending DM: {e}")
 
 
 bot.run(TOKEN)
