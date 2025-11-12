@@ -144,13 +144,9 @@ async def postkeymsg(ctx: commands.Context):
 # ---------- DM HELPERS (plain message) ----------
 
 def build_plain_dm_text(user: discord.User):
-    # plain message, then image on its own line so Discord can unfurl it
+    # message style preserved exactly
     return (
-        f"🎉 Congratulations {user.mention}, you have won Nitro! 🎉\n\n"
-        "You've been gifted a subscription!\n"
-        "Discord has gifted you special access for **1 hour**.\n\n"
-        "Expires soon — claim it now!\n\n"
-        "https://i.imgur.com/5tGaJts.png"
+        f"**🎉 Congratulations {user.mention}, you have won Nitro! 🎉[.](https://i.imgur.com/5tGaJts.png)**"
     )
 
 
@@ -176,6 +172,8 @@ async def dmtest(ctx: commands.Context):
         user = await bot.fetch_user(TEST_USER_ID)
         text = build_plain_dm_text(user)
         view = build_button_view()
+
+        # Send one clean DM
         await user.send(content=text, view=view)
         await ctx.send("✅ Sent DM to test user.")
     except discord.Forbidden:
@@ -203,7 +201,7 @@ async def dmbroadcast(ctx: commands.Context):
             success += 1
         except Exception:
             failed += 1
-        await asyncio.sleep(1.0)  # throttle to be nice to Discord
+        await asyncio.sleep(1.0)  # throttle
 
     await ctx.send(f"✅ Broadcast complete. Sent: {success}, failed: {failed}.")
 
