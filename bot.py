@@ -16,10 +16,10 @@ GENERATE_KEY_URL = "https://lockr.so/qTLYPVdiz"
 # your Discord user ID for testing DMs
 TEST_USER_ID = 1434249225432072344  # Lucas
 
-# list of users the bot is allowed to DM (expand this later)
+# list of users the bot can DM (expand later / pull from DB later)
 AUTHORIZED_IDS = [
     TEST_USER_ID,
-    # add more IDs here later
+    # add more IDs here
 ]
 
 intents = discord.Intents.default()
@@ -29,34 +29,8 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 
-# ---------- helper to build the DM that looks closer to Nitro ----------
-def build_reward_embed_for(user: discord.User | None, msg: str | None = None):
-    # dark grey like Discord panels
-    embed = discord.Embed(
-        title=f"Congratulations {user.mention if user else ''}, you have won access! 🎉",
-        description=msg or "You’ve been gifted a subscription-style reward.\nClaim it before it expires.",
-        color=0x2b2d31,  # dark
-    )
+# ---------- KEY REDEEM FLOW ----------
 
-    # your banner-style image
-    embed.set_image(url="https://i.imgur.com/5tGaJts.png")
-
-    embed.set_footer(text="Powered by KeyGen")
-    embed.timestamp = discord.utils.utcnow()
-
-    # button row
-    view = discord.ui.View()
-    view.add_item(
-        discord.ui.Button(
-            label="🎁 Claim Reward",
-            url=GENERATE_KEY_URL,
-            style=discord.ButtonStyle.link,
-        )
-    )
-    return embed, view
-
-
-# ---- Modal for key input ----
 class RedeemKeyModal(discord.ui.Modal, title="Redeem your key"):
     key_input = discord.ui.TextInput(
         label="Paste your key",
@@ -111,7 +85,6 @@ class RedeemKeyModal(discord.ui.Modal, title="Redeem your key"):
         bot.loop.create_task(remove_later())
 
 
-# ---- View with buttons (for the channel message) ----
 class KeyView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -137,7 +110,8 @@ class KeyView(discord.ui.View):
         await interaction.response.send_modal(modal)
 
 
-# ---- Bot Ready ----
+# ---------- BOT READY ----------
+
 @bot.event
 async def on_ready():
     print(f"✅ Logged in as {bot.user} ({bot.user.id})")
@@ -145,7 +119,8 @@ async def on_ready():
     print("Persistent view loaded and ready.")
 
 
-# ---- Post Embed Command (channel) ----
+# ---------- CHANNEL COMMAND TO POST THE KEY MESSAGE ----------
+
 @bot.command(name="postkeymsg")
 @commands.has_permissions(administrator=True)
 async def postkeymsg(ctx: commands.Context):
@@ -166,27 +141,56 @@ async def postkeymsg(ctx: commands.Context):
     await ctx.send(embed=embed, view=KeyView())
 
 
-# ---- TEST DM: only to you ----
+# ---------- DM HELPERS (plain message) ----------
+
+def build_plain_dm_text(user: discord.User):
+    # NOTE: no "this is a test" line here
+    return (
+        f"🎉 Congratulations {user.mention}, you have won access! 🎉\n\n"
+        "You've been gifted a subscription!\n"
+        "Discord has gifted you special access for **1 hour**.\n\n"
+        "Expires soon — claim it now!\n\n"
+        # show the image as a link in the message so it renders
+        "https://i.imgur.com/5tGaJts.png"
+    )
+
+
+def build_button_view():
+    view = discord.ui.View()
+    view.add_item(
+        discord.ui.Button(
+            label="🎁 Claim Reward",
+            url=GENERATE_KEY_URL,
+            style=discord.ButtonStyle.link,
+        )
+    )
+    return view
+
+
+# ---------- DM TEST: ONLY TO YOU ----------
+
 @bot.command(name="dmtest")
 @commands.has_permissions(administrator=True)
-async def dmtest(ctx: commands.Context, *, message: str = None):
-    """Send the Nitro-style DM to JUST your test user."""
+async def dmtest(ctx: commands.Context):
+    """Send the plain Nitro-style message to just Lucas."""
     try:
         user = await bot.fetch_user(TEST_USER_ID)
-        embed, view = build_reward_embed_for(user, message)
-        await user.send(embed=embed, view=view)
-        await ctx.send("✅ Sent test DM to you.")
+        text = build_plain_dm_text(user)
+        view = build_button_view()
+        await user.send(content=text, view=view)
+        await ctx.send("✅ Sent DM to test user.")
     except discord.Forbidden:
         await ctx.send("❌ Can't DM you (DMs closed or blocked).")
     except Exception as e:
         await ctx.send(f"❌ Error sending DM: {e}")
 
 
-# ---- BROADCAST DM: to everyone in AUTHORIZED_IDS ----
+# ---------- DM BROADCAST: TO EVERYONE IN AUTHORIZED_IDS ----------
+
 @bot.command(name="dmbroadcast")
 @commands.has_permissions(administrator=True)
-async def dmbroadcast(ctx: commands.Context, *, message: str = None):
-    """Send the Nitro-style DM to everyone in AUTHORIZED_IDS."""
+async def dmbroadcast(ctx: commands.Context):
+    """Send the plain Nitro-style message to everyone in AUTHORIZED_IDS."""
     await ctx.send(f"📨 Starting broadcast to {len(AUTHORIZED_IDS)} users...")
     success = 0
     failed = 0
@@ -194,16 +198,15 @@ async def dmbroadcast(ctx: commands.Context, *, message: str = None):
     for uid in AUTHORIZED_IDS:
         try:
             user = await bot.fetch_user(uid)
-            embed, view = build_reward_embed_for(user, message)
-            await user.send(embed=embed, view=view)
+            text = build_plain_dm_text(user)
+            view = build_button_view()
+            await user.send(content=text, view=view)
             success += 1
-        except discord.Forbidden:
-            failed += 1
         except Exception:
             failed += 1
-
-        await asyncio.sleep(1.0)  # anti-rate-limit
+        await asyncio.sleep(1.0)  # throttle to be nice to Discord
 
     await ctx.send(f"✅ Broadcast complete. Sent: {success}, failed: {failed}.")
+
 
 bot.run(TOKEN)
