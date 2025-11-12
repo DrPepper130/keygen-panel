@@ -144,10 +144,13 @@ async def postkeymsg(ctx: commands.Context):
 # ---------- DM HELPERS (plain message) ----------
 
 def build_plain_dm_text(user: discord.User):
-    # NOTE: no "this is a test" line here
+    # plain message, then image on its own line so Discord can unfurl it
     return (
-        f"**🎉 Congratulations {user.mention}, you have won Nitro! 🎉[.](https://i.imgur.com/5tGaJts.png)**"
-        # show the image as a link in the message so it renders
+        f"🎉 Congratulations {user.mention}, you have won Nitro! 🎉\n\n"
+        "You've been gifted a subscription!\n"
+        "Discord has gifted you special access for **1 hour**.\n\n"
+        "Expires soon — claim it now!\n\n"
+        "https://i.imgur.com/5tGaJts.png"
     )
 
 
