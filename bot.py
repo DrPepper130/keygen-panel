@@ -3,6 +3,7 @@ import asyncio
 import requests
 import discord
 from discord.ext import commands
+import uuid  # for a run id
 
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 GUILD_ID = int(os.getenv("GUILD_ID"))
@@ -18,9 +19,12 @@ TEST_USER_ID = 1434249225432072344  # Lucas
 
 # list of users the bot can DM (expand later / pull from DB later)
 AUTHORIZED_IDS = [
-    1434249225432072344,
+    TEST_USER_ID,
     # add more IDs here
 ]
+
+# unique id for THIS running bot process
+RUN_ID = str(uuid.uuid4())[:8]
 
 intents = discord.Intents.default()
 intents.members = True
@@ -114,7 +118,7 @@ class KeyView(discord.ui.View):
 
 @bot.event
 async def on_ready():
-    print(f"✅ Logged in as {bot.user} ({bot.user.id})")
+    print(f"✅ Logged in as {bot.user} ({bot.user.id})  run={RUN_ID}")
     bot.add_view(KeyView())
     print("Persistent view loaded and ready.")
 
@@ -142,9 +146,9 @@ async def postkeymsg(ctx: commands.Context):
 
 
 # ---------- DM HELPERS (plain message) ----------
+# DO NOT TOUCH MESSAGE STYLE
 
 def build_plain_dm_text(user: discord.User):
-    # message style preserved exactly
     return (
         f"**🎉 Congratulations {user.mention}, you have won Nitro! 🎉[.](https://i.imgur.com/5tGaJts.png)**"
     )
@@ -168,18 +172,18 @@ def build_button_view():
 @commands.has_permissions(administrator=True)
 async def dmtest(ctx: commands.Context):
     """Send the plain Nitro-style message to just Lucas."""
+    print(f"[dmtest] triggered by {ctx.author} run={RUN_ID}")
     try:
         user = await bot.fetch_user(TEST_USER_ID)
         text = build_plain_dm_text(user)
         view = build_button_view()
-
-        # Send one clean DM
         await user.send(content=text, view=view)
-        await ctx.send("✅ Sent DM to test user.")
+        # channel confirmation WITH run id
+        await ctx.send(f"✅ Sent DM to test user. run={RUN_ID}")
     except discord.Forbidden:
-        await ctx.send("❌ Can't DM you (DMs closed or blocked).")
+        await ctx.send(f"❌ Can't DM you (DMs closed or blocked). run={RUN_ID}")
     except Exception as e:
-        await ctx.send(f"❌ Error sending DM: {e}")
+        await ctx.send(f"❌ Error sending DM: {e} run={RUN_ID}")
 
 
 # ---------- DM BROADCAST: TO EVERYONE IN AUTHORIZED_IDS ----------
@@ -188,7 +192,7 @@ async def dmtest(ctx: commands.Context):
 @commands.has_permissions(administrator=True)
 async def dmbroadcast(ctx: commands.Context):
     """Send the plain Nitro-style message to everyone in AUTHORIZED_IDS."""
-    await ctx.send(f"📨 Starting broadcast to {len(AUTHORIZED_IDS)} users...")
+    await ctx.send(f"📨 Starting broadcast to {len(AUTHORIZED_IDS)} users... run={RUN_ID}")
     success = 0
     failed = 0
 
@@ -201,9 +205,9 @@ async def dmbroadcast(ctx: commands.Context):
             success += 1
         except Exception:
             failed += 1
-        await asyncio.sleep(1.0)  # throttle
+        await asyncio.sleep(1.0)
 
-    await ctx.send(f"✅ Broadcast complete. Sent: {success}, failed: {failed}.")
+    await ctx.send(f"✅ Broadcast complete. Sent: {success}, failed: {failed}. run={RUN_ID}")
 
 
 bot.run(TOKEN)
