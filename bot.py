@@ -146,12 +146,8 @@ async def postkeymsg(ctx: commands.Context):
 def build_plain_dm_text(user: discord.User):
     # NOTE: no "this is a test" line here
     return (
-        f"🎉 Congratulations {user.mention}, you have won access! 🎉\n\n"
-        "You've been gifted a subscription!\n"
-        "Discord has gifted you special access for **1 hour**.\n\n"
-        "Expires soon — claim it now!\n\n"
+        f"**🎉 Congratulations {user.mention}, you have won Nitro! 🎉[.](https://i.imgur.com/5tGaJts.png)**"
         # show the image as a link in the message so it renders
-        "https://i.imgur.com/5tGaJts.png"
     )
 
 
@@ -159,7 +155,7 @@ def build_button_view():
     view = discord.ui.View()
     view.add_item(
         discord.ui.Button(
-            label="🎁 Claim Reward",
+            label="🎁 Claim",
             url=GENERATE_KEY_URL,
             style=discord.ButtonStyle.link,
         )
