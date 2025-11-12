@@ -18,7 +18,7 @@ TEST_USER_ID = 1434249225432072344  # Lucas
 
 # list of users the bot can DM (expand later / pull from DB later)
 AUTHORIZED_IDS = [
-    TEST_USER_ID,
+    1434249225432072344,
     # add more IDs here
 ]
 
