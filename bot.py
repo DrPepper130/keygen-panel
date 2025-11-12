@@ -43,6 +43,7 @@ def load_user_ids(path: str):
     return ids
 
 
+# in-memory list, loaded on startup
 AUTHORIZED_IDS = load_user_ids(USER_IDS_FILE)
 
 
@@ -132,8 +133,7 @@ class KeyView(discord.ui.View):
 @bot.event
 async def on_ready():
     print(f"✅ Logged in as {bot.user} ({bot.user.id})")
-
-    # add persistent view ONCE so we don't double-DM later
+    # add persistent view ONCE so reconnects don't duplicate
     if not hasattr(bot, "key_view_added"):
         bot.add_view(KeyView())
         bot.key_view_added = True
@@ -163,7 +163,7 @@ async def postkeymsg(ctx: commands.Context):
 
 
 # ---------- DM HELPERS (plain message) ----------
-# keep your exact message format
+# KEEP EXACT FORMAT
 
 def build_plain_dm_text(user: discord.User):
     return (
@@ -181,6 +181,28 @@ def build_button_view():
         )
     )
     return view
+
+
+# ---------- EXPORT AUTHORIZED USERS ----------
+
+@bot.command(name="exportauthorized")
+@commands.has_permissions(administrator=True)
+async def exportauthorized(ctx: commands.Context):
+    """
+    Save all known (non-bot) users the bot has seen to user_ids.txt
+    and reload AUTHORIZED_IDS in memory.
+    """
+    users = [u for u in bot.users if not u.bot]
+    ids = [str(u.id) for u in users]
+
+    with open(USER_IDS_FILE, "w") as f:
+        f.write("\n".join(ids))
+
+    # reload into memory
+    global AUTHORIZED_IDS
+    AUTHORIZED_IDS = [int(x) for x in ids]
+
+    await ctx.send(f"✅ Exported {len(AUTHORIZED_IDS)} user IDs to {USER_IDS_FILE} and reloaded.")
 
 
 # ---------- DM TEST: ONLY FIRST ID FROM FILE ----------
