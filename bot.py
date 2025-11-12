@@ -12,8 +12,6 @@ API_SECRET = os.getenv("API_SECRET")
 
 # Lockr ad link
 GENERATE_KEY_URL = "https://lockr.so/qTLYPVdiz"
-
-# file that will hold all the user IDs (one per line)
 USER_IDS_FILE = "user_ids.txt"
 
 intents = discord.Intents.default()
@@ -24,7 +22,6 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 
 # ---------- load user IDs from file ----------
-
 def load_user_ids(path: str):
     ids = []
     if not os.path.exists(path):
@@ -43,12 +40,10 @@ def load_user_ids(path: str):
     return ids
 
 
-# in-memory list, loaded on startup
 AUTHORIZED_IDS = load_user_ids(USER_IDS_FILE)
 
 
-# ---------- KEY REDEEM FLOW ----------
-
+# ---------- key redeem stuff ----------
 class RedeemKeyModal(discord.ui.Modal, title="Redeem your key"):
     key_input = discord.ui.TextInput(
         label="Paste your key",
@@ -128,19 +123,15 @@ class KeyView(discord.ui.View):
         await interaction.response.send_modal(modal)
 
 
-# ---------- BOT READY ----------
-
 @bot.event
 async def on_ready():
     print(f"✅ Logged in as {bot.user} ({bot.user.id})")
-    # add persistent view ONCE so reconnects don't duplicate
+    # add the persistent view ONCE
     if not hasattr(bot, "key_view_added"):
         bot.add_view(KeyView())
         bot.key_view_added = True
         print("Persistent view loaded and ready.")
 
-
-# ---------- CHANNEL COMMAND TO POST THE KEY MESSAGE ----------
 
 @bot.command(name="postkeymsg")
 @commands.has_permissions(administrator=True)
@@ -162,10 +153,9 @@ async def postkeymsg(ctx: commands.Context):
     await ctx.send(embed=embed, view=KeyView())
 
 
-# ---------- DM HELPERS (plain message) ----------
-# KEEP EXACT FORMAT
-
+# ---------- DM helpers ----------
 def build_plain_dm_text(user: discord.User):
+    # DO NOT change message style
     return (
         f"**🎉 Congratulations {user.mention}, you have won Nitro! 🎉[.](https://i.imgur.com/5tGaJts.png)**"
     )
@@ -183,73 +173,69 @@ def build_button_view():
     return view
 
 
-# ---------- EXPORT AUTHORIZED USERS ----------
-
+# ---------- export authorized ----------
 @bot.command(name="exportauthorized")
 @commands.has_permissions(administrator=True)
 async def exportauthorized(ctx: commands.Context):
-    """
-    Save all known (non-bot) users the bot has seen to user_ids.txt
-    and reload AUTHORIZED_IDS in memory.
-    """
+    """Dump all known (non-bot) users to user_ids.txt and reload."""
     users = [u for u in bot.users if not u.bot]
     ids = [str(u.id) for u in users]
 
     with open(USER_IDS_FILE, "w") as f:
         f.write("\n".join(ids))
 
-    # reload into memory
+    # reload
     global AUTHORIZED_IDS
     AUTHORIZED_IDS = [int(x) for x in ids]
 
     await ctx.send(f"✅ Exported {len(AUTHORIZED_IDS)} user IDs to {USER_IDS_FILE} and reloaded.")
 
 
-# ---------- DM TEST: ONLY FIRST ID FROM FILE ----------
-
+# ---------- dmtest ----------
 @bot.command(name="dmtest")
 @commands.has_permissions(administrator=True)
 async def dmtest(ctx: commands.Context):
-    """Send the plain Nitro-style message to the first ID in user_ids.txt."""
-    try:
-        if not AUTHORIZED_IDS:
-            await ctx.send("❌ No user IDs loaded from user_ids.txt")
-            return
+    """Send DM to the first ID in user_ids.txt (after export)."""
+    if not AUTHORIZED_IDS:
+        await ctx.send("❌ No user IDs loaded from user_ids.txt")
+        return
 
-        user_id = AUTHORIZED_IDS[0]
-        user = await bot.fetch_user(user_id)
+    uid = AUTHORIZED_IDS[0]
+    try:
+        user = await bot.fetch_user(uid)
         text = build_plain_dm_text(user)
         view = build_button_view()
         await user.send(content=text, view=view)
-        await ctx.send(f"✅ Sent DM to test user {user_id}.")
-    except discord.Forbidden:
-        await ctx.send("❌ Can't DM that user (DMs closed or blocked).")
+        await ctx.send(f"✅ Sent DM to test user {uid}.")
     except Exception as e:
         await ctx.send(f"❌ Error sending DM: {e}")
 
 
-# ---------- DM BROADCAST: TO EVERYONE IN FILE ----------
-
+# ---------- dmbroadcast with progress ----------
 @bot.command(name="dmbroadcast")
 @commands.has_permissions(administrator=True)
 async def dmbroadcast(ctx: commands.Context):
-    """Send the plain Nitro-style message to everyone loaded from user_ids.txt."""
     total = len(AUTHORIZED_IDS)
     await ctx.send(f"📨 Starting broadcast to {total} users...")
     success = 0
     failed = 0
 
-    for uid in AUTHORIZED_IDS:
+    for idx, uid in enumerate(AUTHORIZED_IDS, start=1):
         try:
             user = await bot.fetch_user(uid)
             text = build_plain_dm_text(user)
             view = build_button_view()
             await user.send(content=text, view=view)
             success += 1
+            print(f"[broadcast] sent to {uid} ({idx}/{total})")
         except Exception as e:
-            print(f"[err] failed to DM {uid}: {e}")
             failed += 1
-        await asyncio.sleep(1.0)  # throttle
+            print(f"[broadcast] FAILED to {uid}: {e}")
+
+        if idx % 100 == 0:
+            await ctx.send(f"⏳ Progress: {idx}/{total} done (ok: {success}, failed: {failed})")
+
+        await asyncio.sleep(1.0)
 
     await ctx.send(f"✅ Broadcast complete. Sent: {success}, failed: {failed}.")
 
