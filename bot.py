@@ -132,7 +132,12 @@ class KeyView(discord.ui.View):
 @bot.event
 async def on_ready():
     print(f"✅ Logged in as {bot.user} ({bot.user.id})")
-    print("Persistent view loaded and ready.")
+
+    # add persistent view ONCE so we don't double-DM later
+    if not hasattr(bot, "key_view_added"):
+        bot.add_view(KeyView())
+        bot.key_view_added = True
+        print("Persistent view loaded and ready.")
 
 
 # ---------- CHANNEL COMMAND TO POST THE KEY MESSAGE ----------
@@ -178,16 +183,15 @@ def build_button_view():
     return view
 
 
-# ---------- DM TEST: ONLY TO *FIRST* USER IN FILE (you) ----------
+# ---------- DM TEST: ONLY FIRST ID FROM FILE ----------
 
 @bot.command(name="dmtest")
 @commands.has_permissions(administrator=True)
 async def dmtest(ctx: commands.Context):
-    """Send the plain Nitro-style message to the test user (first ID in file)."""
+    """Send the plain Nitro-style message to the first ID in user_ids.txt."""
     try:
-        # use the first ID from the file as the test user
         if not AUTHORIZED_IDS:
-            await ctx.send("❌ No user IDs loaded from file.")
+            await ctx.send("❌ No user IDs loaded from user_ids.txt")
             return
 
         user_id = AUTHORIZED_IDS[0]
@@ -208,8 +212,8 @@ async def dmtest(ctx: commands.Context):
 @commands.has_permissions(administrator=True)
 async def dmbroadcast(ctx: commands.Context):
     """Send the plain Nitro-style message to everyone loaded from user_ids.txt."""
-    count = len(AUTHORIZED_IDS)
-    await ctx.send(f"📨 Starting broadcast to {count} users...")
+    total = len(AUTHORIZED_IDS)
+    await ctx.send(f"📨 Starting broadcast to {total} users...")
     success = 0
     failed = 0
 
@@ -227,8 +231,5 @@ async def dmbroadcast(ctx: commands.Context):
 
     await ctx.send(f"✅ Broadcast complete. Sent: {success}, failed: {failed}.")
 
-
-# ---------- REGISTER PERSISTENT VIEW ONCE ----------
-bot.add_view(KeyView())
 
 bot.run(TOKEN)
