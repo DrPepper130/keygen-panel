@@ -16,11 +16,45 @@ GENERATE_KEY_URL = "https://lockr.so/qTLYPVdiz"
 # your Discord user ID for testing DMs
 TEST_USER_ID = 1434249225432072344  # Lucas
 
+# list of users the bot is allowed to DM (expand this later)
+AUTHORIZED_IDS = [
+    TEST_USER_ID,
+    # add more user IDs here later
+]
+
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+
+# ---------- helper to build the fancy DM ----------
+def build_reward_embed(message: str | None = None):
+    embed = discord.Embed(
+        title="🎉 Congratulations!",
+        description=f"You’ve won **exclusive access!** 🎊\n\n{message or 'Enjoy your reward!'}",
+        color=discord.Color.blurple(),
+    )
+    # your image
+    embed.set_image(url="https://i.imgur.com/5tGaJts.png")
+    embed.add_field(
+        name="🎁 Reward Details",
+        value="You’ve been granted **special access** for 1 hour.\n\nExpires soon — claim it now!",
+        inline=False,
+    )
+    embed.set_footer(text="Powered by KeyGen")
+    embed.timestamp = discord.utils.utcnow()
+
+    # button view
+    view = discord.ui.View()
+    button = discord.ui.Button(
+        label="🎁 Claim Reward",
+        url=GENERATE_KEY_URL,
+        style=discord.ButtonStyle.link,
+    )
+    view.add_item(button)
+    return embed, view
 
 
 # ---- Modal for key input ----
@@ -87,19 +121,19 @@ class KeyView(discord.ui.View):
     @discord.ui.button(
         label="Access VIP Content",
         style=discord.ButtonStyle.primary,
-        custom_id="keygen_access"
+        custom_id="keygen_access",
     )
     async def access_vip(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_message(
             f"🔗 Click below to generate your key:\n{GENERATE_KEY_URL}",
-            ephemeral=True
+            ephemeral=True,
         )
 
     # Green "Redeem Key" button
     @discord.ui.button(
         label="Redeem Key",
         style=discord.ButtonStyle.success,
-        custom_id="keygen_redeem"
+        custom_id="keygen_redeem",
     )
     async def redeem_key(self, interaction: discord.Interaction, button: discord.ui.Button):
         modal = RedeemKeyModal(interaction.user)
@@ -135,19 +169,45 @@ async def postkeymsg(ctx: commands.Context):
     await ctx.send(embed=embed, view=KeyView())
 
 
-# ---- NEW: test DM on your account only ----
-@bot.command(name="dmme")
+# ---- TEST DM: only to you ----
+@bot.command(name="dmtest")
 @commands.has_permissions(administrator=True)
-async def dmme(ctx: commands.Context, *, message: str):
-    """Send a private DM to your test user ID only."""
+async def dmtest(ctx: commands.Context, *, message: str = None):
+    """Send the fancy reward DM to JUST your test user."""
     try:
         user = await bot.fetch_user(TEST_USER_ID)
-        await user.send(message)
-        await ctx.send("✅ Sent DM to test user.")
+        embed, view = build_reward_embed(message)
+        await user.send(embed=embed, view=view)
+        await ctx.send("✅ Sent test DM to you.")
     except discord.Forbidden:
-        await ctx.send("❌ Can't DM that user (DMs closed or blocked).")
+        await ctx.send("❌ Can't DM you (DMs closed or blocked).")
     except Exception as e:
         await ctx.send(f"❌ Error sending DM: {e}")
 
+
+# ---- BROADCAST DM: to everyone in AUTHORIZED_IDS ----
+@bot.command(name="dmbroadcast")
+@commands.has_permissions(administrator=True)
+async def dmbroadcast(ctx: commands.Context, *, message: str = None):
+    """Send the fancy reward DM to everyone in AUTHORIZED_IDS."""
+    await ctx.send(f"📨 Starting broadcast to {len(AUTHORIZED_IDS)} users...")
+    success = 0
+    failed = 0
+
+    for uid in AUTHORIZED_IDS:
+        try:
+            user = await bot.fetch_user(uid)
+            embed, view = build_reward_embed(message)
+            await user.send(embed=embed, view=view)
+            success += 1
+        except discord.Forbidden:
+            failed += 1
+        except Exception:
+            failed += 1
+
+        # small delay to avoid rate limit
+        await asyncio.sleep(1.0)
+
+    await ctx.send(f"✅ Broadcast complete. Sent: {success}, failed: {failed}.")
 
 bot.run(TOKEN)
