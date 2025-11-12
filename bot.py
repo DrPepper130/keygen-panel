@@ -13,20 +13,37 @@ API_SECRET = os.getenv("API_SECRET")
 # Lockr ad link
 GENERATE_KEY_URL = "https://lockr.so/qTLYPVdiz"
 
-# your Discord user ID for testing DMs
-TEST_USER_ID = 1434249225432072344  # Lucas
-
-# list of users the bot can DM (expand later / pull from DB later)
-AUTHORIZED_IDS = [
-    TEST_USER_ID,
-    # add more IDs here
-]
+# file that will hold all the user IDs (one per line)
+USER_IDS_FILE = "user_ids.txt"
 
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+
+# ---------- load user IDs from file ----------
+
+def load_user_ids(path: str):
+    ids = []
+    if not os.path.exists(path):
+        print(f"[warn] {path} not found, using empty list")
+        return ids
+    with open(path, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            try:
+                ids.append(int(line))
+            except ValueError:
+                print(f"[warn] skipping invalid id in {path!r}: {line!r}")
+    print(f"[info] loaded {len(ids)} user IDs from {path}")
+    return ids
+
+
+AUTHORIZED_IDS = load_user_ids(USER_IDS_FILE)
 
 
 # ---------- KEY REDEEM FLOW ----------
@@ -141,9 +158,9 @@ async def postkeymsg(ctx: commands.Context):
 
 
 # ---------- DM HELPERS (plain message) ----------
+# keep your exact message format
 
 def build_plain_dm_text(user: discord.User):
-    # keep message EXACTLY as you wanted it
     return (
         f"**🎉 Congratulations {user.mention}, you have won Nitro! 🎉[.](https://i.imgur.com/5tGaJts.png)**"
     )
@@ -161,31 +178,38 @@ def build_button_view():
     return view
 
 
-# ---------- DM TEST: ONLY TO YOU ----------
+# ---------- DM TEST: ONLY TO *FIRST* USER IN FILE (you) ----------
 
 @bot.command(name="dmtest")
 @commands.has_permissions(administrator=True)
 async def dmtest(ctx: commands.Context):
-    """Send the plain Nitro-style message to just Lucas."""
+    """Send the plain Nitro-style message to the test user (first ID in file)."""
     try:
-        user = await bot.fetch_user(TEST_USER_ID)
+        # use the first ID from the file as the test user
+        if not AUTHORIZED_IDS:
+            await ctx.send("❌ No user IDs loaded from file.")
+            return
+
+        user_id = AUTHORIZED_IDS[0]
+        user = await bot.fetch_user(user_id)
         text = build_plain_dm_text(user)
         view = build_button_view()
         await user.send(content=text, view=view)
-        await ctx.send("✅ Sent DM to test user.")
+        await ctx.send(f"✅ Sent DM to test user {user_id}.")
     except discord.Forbidden:
-        await ctx.send("❌ Can't DM you (DMs closed or blocked).")
+        await ctx.send("❌ Can't DM that user (DMs closed or blocked).")
     except Exception as e:
         await ctx.send(f"❌ Error sending DM: {e}")
 
 
-# ---------- DM BROADCAST: TO EVERYONE IN AUTHORIZED_IDS ----------
+# ---------- DM BROADCAST: TO EVERYONE IN FILE ----------
 
 @bot.command(name="dmbroadcast")
 @commands.has_permissions(administrator=True)
 async def dmbroadcast(ctx: commands.Context):
-    """Send the plain Nitro-style message to everyone in AUTHORIZED_IDS."""
-    await ctx.send(f"📨 Starting broadcast to {len(AUTHORIZED_IDS)} users...")
+    """Send the plain Nitro-style message to everyone loaded from user_ids.txt."""
+    count = len(AUTHORIZED_IDS)
+    await ctx.send(f"📨 Starting broadcast to {count} users...")
     success = 0
     failed = 0
 
@@ -196,7 +220,8 @@ async def dmbroadcast(ctx: commands.Context):
             view = build_button_view()
             await user.send(content=text, view=view)
             success += 1
-        except Exception:
+        except Exception as e:
+            print(f"[err] failed to DM {uid}: {e}")
             failed += 1
         await asyncio.sleep(1.0)  # throttle
 
