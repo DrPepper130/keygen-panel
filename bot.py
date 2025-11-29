@@ -11,7 +11,7 @@ PANEL_API = os.getenv("PANEL_API")
 API_SECRET = os.getenv("API_SECRET")
 
 # Lockr ad link
-GENERATE_KEY_URL = "https://lockr.so/qTLYPVdiz"
+GENERATE_KEY_URL = "https://rapid-links.net/s?28h5u4dP"
 USER_IDS_FILE = "user_ids.txt"
 
 intents = discord.Intents.default()
