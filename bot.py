@@ -174,23 +174,17 @@ class RedeemKeyModal(discord.ui.Modal, title="Redeem your key"):
 
 
 class KeyView(discord.ui.View):
-    """Persistent view with:
-    - Link button → opens external URL (Discord pop-out)
-    - Redeem Key button → opens modal
-    """
-
     def __init__(self):
         super().__init__(timeout=None)
 
-    # Link-style buttons open immediately; no callback logic needed.
-    @discord.ui.button(
-        label="Access VIP Content",
-        style=discord.ButtonStyle.link,
-        url=GENERATE_KEY_URL,  # direct URL (no redirectors if you want the domain shown)
-    )
-    async def access_vip(self, _: discord.Interaction, __: discord.ui.Button):
-        # No-op: Discord handles link buttons client-side.
-        pass
+        # LINK BUTTON (opens Discord "Leaving Discord" popout)
+        self.add_item(
+            discord.ui.Button(
+                label="Access VIP Content",
+                style=discord.ButtonStyle.link,
+                url=GENERATE_KEY_URL,  # direct https://... (no redirector if you care about domain shown)
+            )
+        )
 
     @discord.ui.button(
         label="Redeem Key",
@@ -198,12 +192,9 @@ class KeyView(discord.ui.View):
         custom_id="keygen_redeem",
     )
     async def redeem_key(self, interaction: discord.Interaction, _: discord.ui.Button):
-        # Must resolve member from the interaction's guild for role operations.
-        if not interaction.guild:
-            await interaction.response.send_message("Use this in a server channel.", ephemeral=True)
-            return
-        modal = RedeemKeyModal(interaction.user)  # user is a Member in guild contexts
+        modal = RedeemKeyModal(interaction.user)
         await interaction.response.send_modal(modal)
+
 
 
 # ------------------------- Bot Events -------------------------
