@@ -177,23 +177,27 @@ class KeyView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-        # LINK BUTTON (opens Discord "Leaving Discord" popout)
-        self.add_item(
-            discord.ui.Button(
-                label="Access VIP Content",
-                style=discord.ButtonStyle.link,
-                url=GENERATE_KEY_URL,  # direct https://... (no redirector if you care about domain shown)
-            )
+        # LEFT BUTTON — Access VIP (link button)
+        access_btn = discord.ui.Button(
+            label="Access VIP Content",
+            style=discord.ButtonStyle.link,
+            url=GENERATE_KEY_URL,
         )
+        self.add_item(access_btn)
 
-    @discord.ui.button(
-        label="Redeem Key",
-        style=discord.ButtonStyle.success,
-        custom_id="keygen_redeem",
-    )
-    async def redeem_key(self, interaction: discord.Interaction, _: discord.ui.Button):
+        # RIGHT BUTTON — Redeem Key (callback)
+        redeem_btn = discord.ui.Button(
+            label="Redeem Key",
+            style=discord.ButtonStyle.success,
+            custom_id="keygen_redeem"
+        )
+        redeem_btn.callback = self.redeem_callback
+        self.add_item(redeem_btn)
+
+    async def redeem_callback(self, interaction: discord.Interaction):
         modal = RedeemKeyModal(interaction.user)
         await interaction.response.send_modal(modal)
+
 
 
 
