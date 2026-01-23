@@ -237,17 +237,17 @@ async def _shutdown_http_session():
 async def postkeymsg(ctx: commands.Context):
     """Post the main embed with buttons."""
     embed = discord.Embed(
-        title="🔞 Get Your FREE NSFW Content!",
+        title="🔞 Redeem your <@&1434312586475606047> key here! 🔞",
         description=(
-            "**Follow the simple steps below to unlock your NSFW content!**\n\n"
-            "> Click **Access VIP Content**.\n"
-            "> Complete the steps & copy the generated key.\n"
+            "**Follow the simple steps below to unlock your private vault!**\n\n"
+            "> Click https://discord.com/channels/1434255594579034175/1456396121164480542.\n"
+            "> Complete checkout to redeem your key.\n"
             "> Press **Redeem Key** and enter the key.\n"
-            "> Done — enjoy your access for **1 hour!**"
+            "> Done — enjoy your access!**"
         ),
-        color=discord.Color.purple(),
+        color=discord.Color.pink(),
     )
-    embed.set_image(url="https://i.imgur.com/OUH4pIk.gif")
+    embed.set_image(url="https://i.imgur.com/4IHj6in.gif")
     embed.set_footer(text="Powered by KeyGen")
 
     await ctx.send(embed=embed, view=KeyView())
