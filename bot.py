@@ -237,7 +237,7 @@ async def _shutdown_http_session():
 async def postkeymsg(ctx: commands.Context):
     """Post the main embed with buttons."""
     embed = discord.Embed(
-        title="🔞 Redeem your <@&1434312586475606047> key here! 🔞",
+        title="🔞 Redeem your VIP Access key here! 🔞",
         description=(
             "**Follow the simple steps below to unlock your private vault!**\n\n"
             "> Click https://discord.com/channels/1434255594579034175/1456396121164480542.\n"
