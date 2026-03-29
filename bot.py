@@ -86,7 +86,7 @@ async def vip(ctx, channel: discord.TextChannel = None, image_url: str = None, a
     embed = discord.Embed(
         title="🔞Redeem your VIP Access key here!🔞",
         description=(
-            "#### Follow the simple steps below to unlock your private vault!\n\n"
+            "### Follow the simple steps below to unlock your private vault!\n\n"
             f"> Click {channel.mention}.\n"
             "> Complete checkout to redeem your key.\n"
             "> Press Redeem Key and enter the key.\n"
