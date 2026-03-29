@@ -1,11 +1,12 @@
 import os
 import discord
 from discord.ext import commands
+from discord import app_commands
 
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 GUILD_ID = os.getenv("GUILD_ID")
-STRIPE_URL = os.getenv("PANEL_API") or "https://checkout.megafile.one/b/cNi00c9Ypf3g9aV28q33W05"
-IMAGE_URL = "https://i.imgur.com/4EZX8AZ.gif"
+DEFAULT_URL = os.getenv("PANEL_API") or "https://checkout.megafile.one/b/cNi00c9Ypf3g9aV28q33W05"
+DEFAULT_IMAGE_URL = "https://i.imgur.com/4EZX8AZ.gif"
 
 if not TOKEN:
     raise Exception("Missing DISCORD_BOT_TOKEN environment variable")
@@ -40,14 +41,14 @@ class RedeemButton(discord.ui.Button):
 
 
 class PanelButtons(discord.ui.View):
-    def __init__(self):
+    def __init__(self, access_url: str):
         super().__init__(timeout=None)
 
         self.add_item(
             discord.ui.Button(
                 label="Access VIP Content",
                 style=discord.ButtonStyle.link,
-                url=STRIPE_URL
+                url=access_url
             )
         )
 
@@ -55,24 +56,41 @@ class PanelButtons(discord.ui.View):
 
 
 @bot.tree.command(name="vip-panel", description="Post the VIP panel")
-async def vip_panel(interaction: discord.Interaction):
+@app_commands.describe(
+    image_url="Image/GIF URL to show in the embed",
+    step2_channel="Channel users should click in step 1",
+    access_url="URL for the Access VIP Content button"
+)
+async def vip_panel(
+    interaction: discord.Interaction,
+    image_url: str = DEFAULT_IMAGE_URL,
+    step2_channel: discord.TextChannel = None,
+    access_url: str = DEFAULT_URL
+):
+    if step2_channel is None:
+        await interaction.response.send_message(
+            "You need to choose a channel for step 1.",
+            ephemeral=True
+        )
+        return
+
     embed = discord.Embed(
         title="🔞Redeem your VIP Access key here!🔞",
         description=(
             "#### Follow the simple steps below to unlock your private vault!\n\n"
-            "> Click https://discord.com/channels/1434255594579034175/1434256246306902088.\n"
+            f"> Click {step2_channel.mention}.\n"
             "> Complete checkout to redeem your key.\n"
             "> Press Redeem Key and enter the key.\n"
             "> Done - enjoy your access!"
         ),
-        color=0xff5a00
+        color=0x00ff00
     )
 
-    embed.set_image(url=IMAGE_URL)
+    embed.set_image(url=image_url)
 
     await interaction.response.send_message(
         embed=embed,
-        view=PanelButtons()
+        view=PanelButtons(access_url)
     )
 
 
