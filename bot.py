@@ -4,8 +4,8 @@ from discord.ext import commands
 
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 GUILD_ID = os.getenv("GUILD_ID")
-STRIPE_URL = os.getenv("PANEL_API") or "https://buy.stripe.com/test"
-IMAGE_URL = "https://via.placeholder.com/900x300/ff5a00/ff5a00"
+STRIPE_URL = os.getenv("PANEL_API") or "https://checkout.megafile.one/b/cNi00c9Ypf3g9aV28q33W05"
+IMAGE_URL = "https://i.imgur.com/4EZX8AZ.gif"
 
 if not TOKEN:
     raise Exception("Missing DISCORD_BOT_TOKEN environment variable")
@@ -57,13 +57,13 @@ class PanelButtons(discord.ui.View):
 @bot.tree.command(name="vip-panel", description="Post the VIP panel")
 async def vip_panel(interaction: discord.Interaction):
     embed = discord.Embed(
-        title="Redeem your VIP Access key here!",
+        title="🔞Redeem your VIP Access key here!🔞",
         description=(
-            "Follow the simple steps below to unlock your private vault!\n\n"
-            "Click # VIP-ACCESS.\n"
-            "Complete checkout to redeem your key.\n"
-            "Press Redeem Key and enter the key.\n"
-            "Done - enjoy your access!"
+            "### Follow the simple steps below to unlock your private vault!\n\n"
+            "> Click https://discord.com/channels/1434255594579034175/1434256246306902088.\n"
+            "> Complete checkout to redeem your key.\n"
+            "> Press Redeem Key and enter the key.\n"
+            "> Done - enjoy your access!"
         ),
         color=0xff5a00
     )
