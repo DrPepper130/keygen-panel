@@ -28,7 +28,6 @@ class RedeemModal(discord.ui.Modal, title="Redeem your key"):
             ephemeral=True
         )
 
-
 # -------------------------
 # BUTTON VIEW
 # -------------------------
