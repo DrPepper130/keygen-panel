@@ -59,7 +59,7 @@ async def vip_panel(interaction: discord.Interaction):
     embed = discord.Embed(
         title="🔞Redeem your VIP Access key here!🔞",
         description=(
-            "### Follow the simple steps below to unlock your private vault!\n\n"
+            "#### Follow the simple steps below to unlock your private vault!\n\n"
             "> Click https://discord.com/channels/1434255594579034175/1434256246306902088.\n"
             "> Complete checkout to redeem your key.\n"
             "> Press Redeem Key and enter the key.\n"
