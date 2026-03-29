@@ -68,7 +68,7 @@ def valid_url(url: str) -> bool:
 )
 async def vip_panel(
     interaction: discord.Interaction,
-    step2_channel: discord.AppCommandChannel,
+    step2_channel: app_commands.AppCommandChannel,
     image_url: Optional[str] = None,
     access_url: Optional[str] = None
 ):
