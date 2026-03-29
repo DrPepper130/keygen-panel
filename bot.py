@@ -1,21 +1,20 @@
+import os
 import discord
 from discord.ext import commands
-from discord import app_commands
-import os
 
-TOKEN = "YOUR_BOT_TOKEN"
-STRIPE_URL = "https://buy.stripe.com/YOUR_LINK"
-IMAGE_URL = "https://i.imgur.com/4IHj6in.gif"
+TOKEN = os.getenv("DISCORD_BOT_TOKEN")
+GUILD_ID = os.getenv("GUILD_ID")
+STRIPE_URL = os.getenv("PANEL_API") or "https://buy.stripe.com/test"
+IMAGE_URL = "https://via.placeholder.com/900x300/ff5a00/ff5a00"
+
+if not TOKEN:
+    raise Exception("Missing DISCORD_BOT_TOKEN environment variable")
 
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 
-# -------------------------
-# MODAL (popup input box)
-# -------------------------
 class RedeemModal(discord.ui.Modal, title="Redeem your key"):
-
     key_input = discord.ui.TextInput(
         label="Paste your key",
         placeholder="e.g. AbCdE123...",
@@ -28,37 +27,35 @@ class RedeemModal(discord.ui.Modal, title="Redeem your key"):
             ephemeral=True
         )
 
-# -------------------------
-# BUTTON VIEW
-# -------------------------
-class PanelButtons(discord.ui.View):
 
+class RedeemButton(discord.ui.Button):
     def __init__(self):
-        super().__init__(timeout=None)
+        super().__init__(
+            label="Redeem Key",
+            style=discord.ButtonStyle.success
+        )
 
-    @discord.ui.button(
-        label="Access VIP Content",
-        style=discord.ButtonStyle.link,
-        url=STRIPE_URL
-    )
-    async def access_button(self, interaction, button):
-        pass
-
-    @discord.ui.button(
-        label="Redeem Key",
-        style=discord.ButtonStyle.success
-    )
-    async def redeem_button(self, interaction: discord.Interaction, button):
-
+    async def callback(self, interaction: discord.Interaction):
         await interaction.response.send_modal(RedeemModal())
 
 
-# -------------------------
-# PANEL COMMAND
-# -------------------------
+class PanelButtons(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+        self.add_item(
+            discord.ui.Button(
+                label="Access VIP Content",
+                style=discord.ButtonStyle.link,
+                url=STRIPE_URL
+            )
+        )
+
+        self.add_item(RedeemButton())
+
+
 @bot.tree.command(name="vip-panel", description="Post the VIP panel")
 async def vip_panel(interaction: discord.Interaction):
-
     embed = discord.Embed(
         title="Redeem your VIP Access key here!",
         description=(
@@ -68,7 +65,7 @@ async def vip_panel(interaction: discord.Interaction):
             "Press Redeem Key and enter the key.\n"
             "Done - enjoy your access!"
         ),
-        color=0xff4d00
+        color=0xff5a00
     )
 
     embed.set_image(url=IMAGE_URL)
@@ -79,12 +76,18 @@ async def vip_panel(interaction: discord.Interaction):
     )
 
 
-# -------------------------
-# READY EVENT
-# -------------------------
 @bot.event
 async def on_ready():
-    await bot.tree.sync()
+    try:
+        if GUILD_ID:
+            guild = discord.Object(id=int(GUILD_ID))
+            bot.tree.copy_global_to(guild=guild)
+            await bot.tree.sync(guild=guild)
+        else:
+            await bot.tree.sync()
+    except Exception as e:
+        print(f"Sync error: {e}")
+
     print(f"Logged in as {bot.user}")
 
 
