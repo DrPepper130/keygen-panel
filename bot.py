@@ -4,7 +4,7 @@ from discord.ext import commands
 
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 DEFAULT_URL = os.getenv("PANEL_API") or "https://checkout.megafile.one/b/cNi00c9Ypf3g9aV28q33W05"
-DEFAULT_IMAGE_URL = "https://i.imgur.com/4lhj6in.gif"
+DEFAULT_IMAGE_URL = "https://i.imgur.com/4IHj6in.gif"
 
 if not TOKEN:
     raise Exception("Missing DISCORD_BOT_TOKEN environment variable")
